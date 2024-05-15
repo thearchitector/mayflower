@@ -11,3 +11,6 @@
 
 #!.yarn/cache
 .pnp.*
+
+__pycache__
+.venv

@@ -1,4 +1,6 @@
 {
   "name": "mayflower",
+  "type": "module",
+  "main": "mayflower/index.js",
   "packageManager": "yarn@4.2.2"
 }
