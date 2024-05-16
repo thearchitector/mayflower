@@ -74,7 +74,7 @@ console._log = console.log;
 console.log = (...args) => {
   const nargs = [];
   for (const arg of args) {
-    if (arg.ffid) nargs.push(arg.toString());
+    if (Object.hasOwn(arg, "ffid")) nargs.push(arg.toString());
     else nargs.push(arg);
   }
   console._log(...nargs);

@@ -1,5 +1,4 @@
 import { REQ_TIMEOUT, DEBUG } from "./env.js";
-import { getErrorMessage } from "./errors.js";
 import { JSBridge } from "./jsi.js";
 
 const logDebug = DEBUG ? console.debug : (..._) => {};
@@ -13,10 +12,24 @@ class BridgeException extends Error {
 }
 
 class PythonException extends Error {
-  constructor(stack, error) {
+  constructor(_, error) {
     super();
-    const trace = this.stack.split("\n").slice(1).join("\n");
-    this.stack = getErrorMessage(stack.join("."), trace, error);
+
+    const lines = error.split("\n");
+    const traceStart = lines
+      .map((line) => line.includes("mayflower"))
+      .lastIndexOf(true);
+    const traceLines = lines
+      .slice(traceStart + 1)
+      .filter((line) => line.trim())
+      .map((line, index) => (index % 2 === 1 ? "  " + line : line));
+    const trace = traceLines.join("\n");
+
+    this.message = trace;
+    this.stack = this.stack
+      .split("\n")
+      .filter((line) => !line.includes("Bridge.call"))
+      .join("\n");
   }
 }
 
