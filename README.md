@@ -1,6 +1,6 @@
 # mayflower
 
-Cross the Atlantic and run Python from Node.js.
+Cross the Atlantic by running Python from JavaScript.
 
 The underlying protocol is a forked and trimmed version of [JSPyBridge](https://github.com/extremeheat/JSPyBridge)'s `pythonia` package.
 
@@ -15,7 +15,7 @@ This package does not yet supported connections over the internet; the intended 
 
 ## Usage
 
-This tool is both a Node.js package and Python package.
+This tool is both a JS package and Python package.
 
 ```sh
 $ poetry add mayflower

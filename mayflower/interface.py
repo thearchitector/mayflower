@@ -1,10 +1,14 @@
 import asyncio
 import signal
+from typing import TYPE_CHECKING
 
 import orjson
 from websockets.server import serve
 
 from .bridge import Bridge
+
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Any
 
 
 class IPC:
@@ -18,12 +22,18 @@ class IPC:
 
         raise TypeError()
 
+    def json_loads(self, data: bytes) -> "Any":
+        return orjson.loads(data)
+
+    def json_dumps(self, what: "Any") -> str:
+        # browsers only support 53-bit integers, while Python supports 64-bit
+        return orjson.dumps(
+            what, option=orjson.OPT_STRICT_INTEGER, default=self._default
+        ).decode()
+
     async def queue(self, what):
         try:
-            # browsers only support 53-bit integers, while Python supports 64-bit
-            data = orjson.dumps(
-                what, option=orjson.OPT_STRICT_INTEGER, default=self._default
-            ).decode()
+            data = self.json_dumps(what)
             await self.websocket.send(data)
         except Exception:
             pass
@@ -37,7 +47,7 @@ class Interface:
             if data[0] != "{":
                 continue
 
-            j = orjson.loads(data)
+            j = bridge.ipc.json_loads(data)
             await bridge.onMessage(j["r"], j["action"], j["ffid"], j["key"], j["val"])
 
     async def run(self):

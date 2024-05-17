@@ -4,8 +4,6 @@ import inspect
 import traceback
 from weakref import WeakValueDictionary
 
-import orjson
-
 from .proxy import Executor, Proxy
 
 
@@ -307,7 +305,7 @@ class Bridge:
         if not data:
             pass  # exit()
 
-        return orjson.loads(data)
+        return self.ipc.json_loads(data)
 
     async def pcall(self, r, ffid, key, args, set_attr=False):
         created = {}

@@ -1,5 +1,8 @@
 {
   "name": "mayflower",
+  "description": "Cross the Atlantic by running Python from JavaScript",
+  "version": "0.1.0",
   "main": "mayflower/index.js",
+  "types": "mayflower/index.d.ts",
   "packageManager": "yarn@4.2.2"
 }
