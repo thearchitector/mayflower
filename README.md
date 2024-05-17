@@ -15,11 +15,11 @@ This package does not yet supported connections over the internet; the intended 
 
 ## Usage
 
-This tool is both a JS package and Python package.
+This tool is both a JS package and Python package. In JS environments, note that this package requires support for ES2017 and above. Transpilation, due to how it handles async / await, **is not guaranteed to work**.
 
 ```sh
-$ poetry add mayflower
-$ yarn add mayflower
+$ poetry add git+https://github.com/thearchitector/mayflower.git
+$ yarn add mayflower@git@github.com:thearchitector/mayflower.git
 ```
 
 To start the websocket server, you can invoke mayflower as a module: `python -m mayflower`.
@@ -29,7 +29,8 @@ For unified applications, like using this tool to invoke Python utilities with a
 
 ```sh
 $ yarn add concurrently
-$ concurrently "python -m mayflower" "cypress open"
+# -u is required for Python to flush logs to stdout / stderr
+$ concurrently "python -um mayflower" "cypress open"
 ```
 
 See the JSPyBridge [documentation](https://github.com/extremeheat/JSPyBridge/blob/master/docs/javascript.md) for the syntactical sugar.

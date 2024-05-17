@@ -392,5 +392,5 @@ class Bridge:
 
             return res_or_coro
         except Exception:
+            traceback.print_exc()
             await self.q(r, "error", "", traceback.format_exc())
-            pass

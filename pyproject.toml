@@ -5,6 +5,9 @@ description = "Cross the Atlantic by running Python from JavaScript"
 authors = ["thearchitector <elias.gabriel@indicodata.ai>"]
 license = "BSD-3-Clause"
 readme = "README.md"
+packages = [
+    { include = "mayflower/*.py" }
+]
 
 [tool.poetry.dependencies]
 python = "~3.10"

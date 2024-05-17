@@ -20,7 +20,7 @@ class PythonException extends Error {
       .map((line) => line.includes("mayflower"))
       .lastIndexOf(true);
     const traceLines = lines
-      .slice(traceStart + 1)
+      .slice(traceStart + 2)
       .filter((line) => line.trim())
       .map((line, index) => (index % 2 === 1 ? "  " + line : line));
     const trace = traceLines.join("\n");
