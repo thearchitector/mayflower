@@ -59,3 +59,4 @@ class Interface:
         async with serve(self.on_message, "localhost", 8768, compression=None):
             print("Mayflower listening on ws://localhost:8768")
             await self.should_stop
+            print("Mayflower shutting down")
