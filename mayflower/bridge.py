@@ -133,7 +133,7 @@ class Bridge:
         py_ffid = self.assign_ffid(inst)
         await self.q(r, "inst", [js_ffid, py_ffid])
 
-    def length(self, r, ffid, keys, args):
+    async def length(self, r, ffid, keys, args):
         v = self.m[ffid]
         for key in keys:
             if isinstance(v, (dict, tuple, list)):
@@ -152,7 +152,7 @@ class Bridge:
                     f"Property '{fix_key(key)}' does not exist on {repr(v)}"
                 )
         l = len(v)
-        self.q(r, "num", l)
+        await self.q(r, "num", l)
 
     async def init(self, r, ffid, key, args):
         v = self.m[ffid](*args)

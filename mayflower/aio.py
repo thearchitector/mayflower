@@ -1,7 +1,7 @@
 import asyncio
 
 
-# please do not look at this
+# abandon hope all ye who enter, here there be demons
 def run_from_sync(coro):
     loop = asyncio.get_running_loop()
     current_task = asyncio.current_task(loop=loop)

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import sys
 
@@ -13,48 +14,49 @@ class JavaScriptError(Exception):
 class Executor:
     def __init__(self, bridge):
         self.bridge = bridge
-        self.queue = bridge.queue_request
         self.i = 0
 
-    async def ipc(self, action, ffid, attr, args=None):
+    def queue(self, *args, **kwargs):
+        asyncio.create_task(self.bridge.queue_request(*args, **kwargs))
+
+    def ipc(self, action, ffid, attr, args=None):
         self.i += 1
         r = self.i  # unique request ts, acts as ID for response
-        l = None  # the lock
         if action == "get":  # return obj[prop]
-            l = await self.queue(
-                r, {"r": r, "action": "get", "ffid": ffid, "key": attr}
-            )
+            self.queue(r, {"r": r, "action": "get", "ffid": ffid, "key": attr})
         if action == "init":  # return new obj[prop]
-            l = await self.queue(
+            self.queue(
                 r, {"r": r, "action": "init", "ffid": ffid, "key": attr, "args": args}
             )
         if action == "inspect":  # return require('util').inspect(obj[prop])
-            l = await self.queue(
-                r, {"r": r, "action": "inspect", "ffid": ffid, "key": attr}
-            )
+            self.queue(r, {"r": r, "action": "inspect", "ffid": ffid, "key": attr})
         if action == "serialize":  # return JSON.stringify(obj[prop])
-            l = await self.queue(r, {"r": r, "action": "serialize", "ffid": ffid})
+            self.queue(r, {"r": r, "action": "serialize", "ffid": ffid})
         if action == "keys":
-            l = await self.queue(r, {"r": r, "action": "keys", "ffid": ffid})
+            self.queue(r, {"r": r, "action": "keys", "ffid": ffid})
         if action == "raw":
             # (not really a FFID, but request ID)
             r = ffid
-            l = await self.bridge.queue_request_raw(ffid, args)
+            asyncio.create_task(self.bridge.queue_request_raw(ffid, args))
 
         # Listen for a response
         while True:
-            j = await self.bridge.read()
-            if j["r"] == r:  # if this is a message for us, OK, return to Python calle
+            j = run_from_sync(self.bridge.read())
+            if j["r"] == r:  # if this is a message for us, OK, return to Python calls
                 break
             else:  # The JS API we called wants to call a Python API... so let the bridge handle it.
-                await self.bridge.onMessage(
-                    j["r"], j["action"], j["ffid"], j["key"], j["val"]
+                asyncio.create_task(
+                    self.bridge.onMessage(
+                        j["r"], j["action"], j["ffid"], j["key"], j["val"]
+                    )
                 )
+
         if "error" in j:
             raise JavaScriptError(f"Access to '{attr}' failed:\n{j['error']}\n")
+
         return j
 
-    async def pcall(self, ffid, action, attr, args, timeout=10):
+    def pcall(self, ffid, action, attr, args, timeout: int | None = 10):
         """
         This function does a one-pass call to JavaScript. Since we assign the FFIDs, we do not
         need to send any preliminary call to JS. We can assign them ourselves.
@@ -85,39 +87,37 @@ class Executor:
 
         payload = json.dumps(packet, default=ser)
 
-        res = await self.ipc("raw", requestId, attr, payload)
+        res = self.ipc("raw", requestId, attr, payload)
 
         return res["key"], res["val"]
 
-    async def getProp(self, ffid, method):
-        resp = await self.ipc("get", ffid, method)
+    def getProp(self, ffid, method):
+        resp = self.ipc("get", ffid, method)
         return resp["key"], resp["val"]
 
-    async def setProp(self, ffid, method, val):
-        await self.pcall(ffid, "set", method, [val])
+    def setProp(self, ffid, method, val):
+        self.pcall(ffid, "set", method, [val])
         return True
 
-    async def callProp(self, ffid, method, args, timeout=None):
-        resp = await self.pcall(ffid, "call", method, args, timeout)
+    def callProp(self, ffid, method, args, timeout=None):
+        resp = self.pcall(ffid, "call", method, args, timeout)
         return resp
 
-    async def initProp(self, ffid, method, args):
-        resp = await self.pcall(ffid, "init", method, args)
+    def initProp(self, ffid, method, args):
+        resp = self.pcall(ffid, "init", method, args)
         return resp
 
-    async def inspect(self, ffid, mode):
-        resp = await self.ipc("inspect", ffid, mode)
+    def inspect(self, ffid, mode):
+        resp = self.ipc("inspect", ffid, mode)
         return resp["val"]
 
-    async def keys(self, ffid):
-        return (await self.ipc("keys", ffid, ""))["keys"]
+    def keys(self, ffid):
+        return (self.ipc("keys", ffid, ""))["keys"]
 
-    async def free(self, ffid):
+    def free(self, ffid):
         self.i += 1
         try:
-            l = await self.queue(
-                self.i, {"r": self.i, "action": "free", "args": [ffid]}
-            )
+            l = self.queue(self.i, {"r": self.i, "action": "free", "args": [ffid]})
         except ValueError:  # Event loop is dead, no need for GC
             pass
 
@@ -167,32 +167,28 @@ class Proxy(object):
 
     def __call__(self, *args, timeout=10):
         mT, v = (
-            run_from_sync(self._exe.initProp(self._pffid, self._pname, args))
+            self._exe.initProp(self._pffid, self._pname, args)
             if self._es6
-            else run_from_sync(
-                self._exe.callProp(self._pffid, self._pname, args, timeout)
-            )
+            else self._exe.callProp(self._pffid, self._pname, args, timeout)
         )
         if mT == "fn":
             return Proxy(self._exe, v)
-        return run_from_sync(self._call(self._pname, mT, v))
+        return self._call(self._pname, mT, v)
 
     def __getattr__(self, attr):
         # Special handling for new keyword for ES5 classes
         if attr == "new":
-            return run_from_sync(
-                self._call(
-                    self._pname if self._pffid == self.ffid else "",
-                    "class",
-                    self._pffid,
-                )
+            return self._call(
+                self._pname if self._pffid == self.ffid else "",
+                "class",
+                self._pffid,
             )
-        methodType, val = run_from_sync(self._exe.getProp(self._pffid, attr))
-        return run_from_sync(self._call(attr, methodType, val))
+        methodType, val = self._exe.getProp(self._pffid, attr)
+        return self._call(attr, methodType, val)
 
     def __getitem__(self, attr):
-        methodType, val = run_from_sync(self._exe.getProp(self.ffid, attr))
-        return run_from_sync(self._call(attr, methodType, val))
+        methodType, val = self._exe.getProp(self.ffid, attr)
+        return self._call(attr, methodType, val)
 
     def __iter__(self):
         self._ix = 0
@@ -219,27 +215,27 @@ class Proxy(object):
         if name in INTERNAL_VARS:
             object.__setattr__(self, name, value)
         else:
-            return run_from_sync(self._exe.setProp(self.ffid, name, value))
+            return self._exe.setProp(self.ffid, name, value)
 
     def __setitem__(self, name, value):
-        return run_from_sync(self._exe.setProp(self.ffid, name, value))
+        return self._exe.setProp(self.ffid, name, value)
 
     def __contains__(self, key):
         return True if self[key] is not None else False
 
     def valueOf(self):
-        ser = run_from_sync(self._exe.ipc("serialize", self.ffid, ""))
+        ser = self._exe.ipc("serialize", self.ffid, "")
         return ser["val"]
 
     def __str__(self):
-        return run_from_sync(self._exe.inspect(self.ffid, "str"))
+        return self._exe.inspect(self.ffid, "str")
 
     def __repr__(self):
-        return run_from_sync(self._exe.inspect(self.ffid, "repr"))
+        return self._exe.inspect(self.ffid, "repr")
 
     def __json__(self):
         return {"ffid": self.ffid}
 
     def __del__(self):
         if not sys.is_finalizing():
-            run_from_sync(self._exe.free(self.ffid))
+            self._exe.free(self.ffid)
