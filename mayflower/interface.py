@@ -3,6 +3,7 @@ import signal
 from typing import TYPE_CHECKING
 
 import orjson
+from websockets.exceptions import ConnectionClosed
 from websockets.server import serve
 
 from .bridge import Bridge
@@ -12,9 +13,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class IPC:
-    def __init__(self, websocket, should_stop):
+    def __init__(self, websocket):
         self.websocket = websocket
-        self.should_stop = should_stop
 
     def _default(self, obj):
         if attr := getattr(obj.__class__, "__json__", None):
@@ -40,23 +40,29 @@ class IPC:
 
 
 class Interface:
-    async def on_message(self, websocket):
-        bridge = Bridge(IPC(websocket, self.should_stop))
-
-        async for data in websocket:
-            if data[0] != "{":
-                continue
-
-            j = bridge.ipc.json_loads(data)
-            await bridge.onMessage(j["r"], j["action"], j["ffid"], j["key"], j["val"])
-
     async def run(self):
         self.loop = asyncio.get_running_loop()
         self.should_stop = self.loop.create_future()
         self.loop.add_signal_handler(signal.SIGTERM, self.should_stop.set_result, None)
         self.loop.add_signal_handler(signal.SIGINT, self.should_stop.set_result, None)
 
-        async with serve(self.on_message, "localhost", 8768, compression=None):
+        async with serve(self._on_message, "localhost", 8768, compression=None):
             print("Mayflower listening on ws://localhost:8768")
             await self.should_stop
             print("Mayflower shutting down")
+
+    async def _on_message(self, websocket):
+        bridge = Bridge(IPC(websocket))
+
+        try:
+            async for data in websocket:
+                if data[0] != "{":
+                    continue
+
+                j = bridge.ipc.json_loads(data)
+                await bridge.onMessage(
+                    j["r"], j["action"], j["ffid"], j["key"], j["val"]
+                )
+        except ConnectionClosed:
+            print("Connection closure caught for graceful shutdown...")
+            self.should_stop.set_result(None)
