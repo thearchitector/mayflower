@@ -102,11 +102,11 @@ class Bridge:
             object.__setattr__(self, attr, val)
 
         base_classes = []
-        for base_ffid, a, kw in bases:
+        for base_ffid, _, _ in bases:
             base = this.m[base_ffid]
             base_classes.append(base)
 
-        claz = type(base_classes[0])
+        # claz = type(base_classes[0])
         clas = type(
             name,
             tuple(base_classes),
@@ -151,8 +151,8 @@ class Bridge:
                 raise LookupError(
                     f"Property '{fix_key(key)}' does not exist on {repr(v)}"
                 )
-        l = len(v)
-        await self.q(r, "num", l)
+        length = len(v)
+        await self.q(r, "num", length)
 
     async def init(self, r, ffid, key, args):
         v = self.m[ffid](*args)

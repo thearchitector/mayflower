@@ -49,12 +49,12 @@ export class PyClass {
     this.#superkwargs = superKwargs;
     if (!Array.isArray(superArgs)) {
       throw new SyntaxError(
-        "Second parameter to PyClass super must be the positional arguments to pass to the Python superclass"
+        "Second parameter to PyClass super must be the positional arguments to pass to the Python superclass",
       );
     }
     if (typeof superKwargs !== "object") {
       throw new SyntaxError(
-        "Third parameter to PyClass super must be an object which holds keyword arguments to pass to the Python superclass"
+        "Third parameter to PyClass super must be an object which holds keyword arguments to pass to the Python superclass",
       );
     }
   }
@@ -71,8 +71,8 @@ export class PyClass {
     // Set.has() is faster than Array.includes which is O(n)
     const members = new Set(
       Object.getOwnPropertyNames(Object.getPrototypeOf(this)).filter(
-        (k) => k !== "constructor"
-      )
+        (k) => k !== "constructor",
+      ),
     );
     // This would be a proxy to Python ... it creates the class & calls __init__ in one pass
     const sup = await this.#superclass;
@@ -210,9 +210,9 @@ export class Bridge {
       REQ_TIMEOUT,
       () => {
         throw new BridgeException(
-          `Attempt to access '${stack.join(".")}' failed.`
+          `Attempt to access '${stack.join(".")}' failed.`,
         );
-      }
+      },
     );
     if (resp.key === "error") throw new PythonException(stack, resp.sig);
     return resp.val;
@@ -232,9 +232,9 @@ export class Bridge {
       REQ_TIMEOUT,
       () => {
         throw new BridgeException(
-          `Attempt to access '${stack.join(".")}' failed.`
+          `Attempt to access '${stack.join(".")}' failed.`,
         );
-      }
+      },
     );
     if (resp.key === "error") {
       if (suppressErrors) return undefined;
@@ -300,7 +300,7 @@ export class Bridge {
               if (made[r] instanceof Promise)
                 throw Error(
                   "You did not await a parameter when calling " +
-                    stack.join(".")
+                    stack.join("."),
                 );
               this.jsi.m[ffid] = made[r];
               this.queueForCollection(ffid, made[r]);
@@ -313,9 +313,9 @@ export class Bridge {
       timeout || REQ_TIMEOUT,
       () => {
         throw new BridgeException(
-          `Attempt to access '${stack.join(".")}' failed.`
+          `Attempt to access '${stack.join(".")}' failed.`,
         );
-      }
+      },
     );
     if (resp.key === "error") throw new PythonException(stack, resp.sig);
 
@@ -349,9 +349,9 @@ export class Bridge {
       REQ_TIMEOUT,
       () => {
         throw new BridgeException(
-          `Attempt to access '${stack.join(".")}' failed.`
+          `Attempt to access '${stack.join(".")}' failed.`,
         );
-      }
+      },
     );
     if (resp.key === "error") throw new PythonException(stack, resp.sig);
     return resp.val;
@@ -370,9 +370,9 @@ export class Bridge {
       REQ_TIMEOUT,
       () => {
         throw new BridgeException(
-          `Attempt to access '${stack.join(".")}' failed.`
+          `Attempt to access '${stack.join(".")}' failed.`,
         );
-      }
+      },
     );
     if (resp.key === "error") throw new PythonException(stack, resp.sig);
     return resp.val;
@@ -406,7 +406,7 @@ export class Bridge {
       500,
       () => {
         throw new BridgeException(`Attempt to create '${name}' failed.`);
-      }
+      },
     );
     if (resp.key === "error") throw new PythonException([name], resp.sig);
     // Python puts a new proxy into its Ref map, we get a ref ID to its one.
@@ -471,7 +471,7 @@ export class Bridge {
                 yield new Proxy(next, handler);
               }
               throw SyntaxError(
-                "You must use `for await` when iterating over a Python object in a for-of loop"
+                "You must use `for await` when iterating over a Python object in a for-of loop",
               );
             };
           }
@@ -524,7 +524,7 @@ export class Bridge {
           args,
           kwargs,
           false,
-          timeout
+          timeout,
         );
         target.callstack = []; // Flush callstack to py
         return ret;
@@ -536,7 +536,7 @@ export class Bridge {
           [...target.callstack],
           [prop, val],
           {},
-          true
+          true,
         );
         return ret;
       },

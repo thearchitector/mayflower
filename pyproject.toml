@@ -1,18 +1,17 @@
-[tool.poetry]
+[project]
 name = "mayflower"
-version = "0.1.0"
+version = "1.0.0"
 description = "Cross the Atlantic by running Python from JavaScript"
-authors = ["thearchitector <elias.gabriel@indicodata.ai>"]
-license = "BSD-3-Clause"
-readme = "README.md"
-packages = [
-    { include = "mayflower/*.py" }
+authors = [
+    {name = "Elias Gabriel", email = "oss@eliasfgabriel.com"}
 ]
-
-[tool.poetry.dependencies]
-python = "~3.10"
-websockets = "^12.0"
-orjson = "^3.10.3"
+dependencies = [
+    "websockets<13.0,>=12.0",
+    "orjson<4.0.0,>=3.10.3",
+]
+requires-python = "~=3.10"
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
 
 [tool.ruff]
 target-version = "py310"
@@ -20,6 +19,12 @@ target-version = "py310"
 [tool.ruff.lint]
 extend-select = ["B", "I", "ASYNC"]
 
+[tool.pdm]
+distribution = true
+
+[tool.pdm.build]
+includes = ["mayflower/*.py"]
+
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

@@ -117,7 +117,7 @@ class Executor:
     def free(self, ffid):
         self.i += 1
         try:
-            l = self.queue(self.i, {"r": self.i, "action": "free", "args": [ffid]})
+            self.queue(self.i, {"r": self.i, "action": "free", "args": [ffid]})
         except ValueError:  # Event loop is dead, no need for GC
             pass
 
@@ -141,13 +141,13 @@ class Proxy(object):
         self._exe = exe
         self._ix = 0
         #
-        self._pffid = prop_ffid if (prop_ffid != None) else ffid
+        self._pffid = prop_ffid if (prop_ffid is not None) else ffid
         self._pname = prop_name
         self._es6 = es6
         self._Keys = None
 
     def _call(self, method, methodType, val):
-        this = self
+        # this = self
 
         # debug("MT", method, methodType, val)
         if methodType == "fn":
@@ -192,7 +192,7 @@ class Proxy(object):
 
     def __iter__(self):
         self._ix = 0
-        if self.length == None:
+        if self.length is None:
             self._Keys = self._exe.keys(self.ffid)
         return self
 
